@@ -9,8 +9,6 @@ env/
 venv/
 ENV/
 bin/
-lib/
-lib64/
 include/
 pyvenv.cfg
 
