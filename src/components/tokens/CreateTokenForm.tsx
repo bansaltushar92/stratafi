@@ -59,7 +59,7 @@ export function CreateTokenForm() {
       });
 
       // Create token wallet
-      await createTokenWallet(token.id);
+      await createTokenWallet(token.id, publicKey.toString());
 
       router.push('/dashboard');
     } catch (err) {
@@ -71,24 +71,25 @@ export function CreateTokenForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-8">Create New Token</h1>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Token</h1>
+      <p className="text-lg text-gray-600 mb-8">Launch your tokenized trading strategy</p>
 
       {!connected ? (
-        <div className="bg-white shadow sm:rounded-lg p-6">
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="bg-white shadow-card rounded-lg p-8 text-center">
+          <p className="text-lg text-gray-600 mb-6">
             Connect your wallet to create a token
           </p>
-          <WalletMultiButton />
+          <WalletMultiButton className="wallet-button !text-lg !py-4 !px-8" />
         </div>
       ) : (
-        <form action={handleSubmit} className="space-y-6">
+        <form action={handleSubmit} className="bg-white shadow-card rounded-lg p-8 space-y-6">
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-lg bg-red-50 p-4">
               <div className="flex">
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <div className="mt-2 text-sm text-red-700">
+                  <h3 className="text-lg font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-red-700">
                     <p>{error}</p>
                   </div>
                 </div>
@@ -97,7 +98,7 @@ export function CreateTokenForm() {
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-lg font-medium text-gray-700 mb-2">
               Token Name
             </label>
             <input
@@ -105,12 +106,13 @@ export function CreateTokenForm() {
               name="name"
               id="name"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              placeholder="Enter token name"
             />
           </div>
 
           <div>
-            <label htmlFor="symbol" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="symbol" className="block text-lg font-medium text-gray-700 mb-2">
               Token Symbol
             </label>
             <input
@@ -118,12 +120,13 @@ export function CreateTokenForm() {
               name="symbol"
               id="symbol"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              placeholder="e.g., BTC"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="block text-lg font-medium text-gray-700 mb-2">
               Description
             </label>
             <textarea
@@ -131,12 +134,13 @@ export function CreateTokenForm() {
               id="description"
               rows={3}
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              placeholder="Describe your trading strategy"
             />
           </div>
 
           <div>
-            <label htmlFor="supply" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="supply" className="block text-lg font-medium text-gray-700 mb-2">
               Total Supply
             </label>
             <input
@@ -144,12 +148,13 @@ export function CreateTokenForm() {
               name="supply"
               id="supply"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              placeholder="Enter total supply"
             />
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="price" className="block text-lg font-medium text-gray-700 mb-2">
               Initial Price (in USDC)
             </label>
             <input
@@ -160,16 +165,16 @@ export function CreateTokenForm() {
               defaultValue="1"
               min="0.000001"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
             />
-            <p className="mt-1 text-sm text-gray-500">Default price is 1 USDC per token</p>
+            <p className="mt-2 text-base text-gray-500">Default price is 1 USDC per token</p>
           </div>
 
-          <div>
+          <div className="pt-4">
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              className={`w-full flex justify-center py-3 px-8 border border-transparent rounded-lg shadow-button text-lg font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
