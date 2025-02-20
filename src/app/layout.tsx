@@ -1,8 +1,7 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Metadata } from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
-import { SolanaWalletProvider } from '@/components/WalletProvider';
+import { ClientWalletProvider } from '@/components/ClientWalletProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,14 +16,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={inter.className}>
-          <SolanaWalletProvider>
-            {children}
-          </SolanaWalletProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <ClientWalletProvider>
+          {children}
+        </ClientWalletProvider>
+      </body>
+    </html>
   );
 }

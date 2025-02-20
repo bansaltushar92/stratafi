@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
 // Update to use the correct Modal function URL format
 const PROJECT_NAME = 'tokenx';
@@ -7,24 +6,6 @@ const getModalUrl = (functionName: string) => `https://${PROJECT_NAME}--${PROJEC
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get the session token from the Authorization header
-    const sessionToken = request.headers.get('authorization')?.split(' ')[1];
-    if (!sessionToken) {
-      return NextResponse.json(
-        { message: 'Missing authorization token' },
-        { status: 401 }
-      );
-    }
-
     const { tokenId, amount, walletAddress } = await request.json();
 
     if (!tokenId || !amount || !walletAddress) {
@@ -45,8 +26,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${getModalUrl('contribute')}?${queryParams}`, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${sessionToken}`
+        'Accept': 'application/json'
       }
     });
 

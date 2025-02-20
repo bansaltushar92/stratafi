@@ -1,6 +1,5 @@
 'use client';
 
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { WalletButton } from "@/components/WalletButton";
 import { Inter } from 'next/font/google';
@@ -60,8 +59,7 @@ export default function DashboardContent({
 
           {/* User Profile Section */}
           <div className="p-4 border-t">
-            <div className="flex items-center justify-between space-y-4">
-              <UserButton afterSignOutUrl="/"/>
+            <div className="flex items-center justify-between">
               <WalletButton />
             </div>
           </div>

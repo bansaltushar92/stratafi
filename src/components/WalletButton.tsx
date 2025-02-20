@@ -1,17 +1,17 @@
 'use client';
 
-import { FC } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import dynamic from 'next/dynamic';
 
-export const WalletButton: FC = () => {
-  const { publicKey } = useWallet();
+// Dynamically import the WalletMultiButton with no SSR
+const WalletMultiButton = dynamic(
+  async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+  { ssr: false }
+);
 
+export function WalletButton() {
   return (
-    <div>
-      <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700">
-        {publicKey ? `${publicKey.toString().slice(0, 4)}...` : 'Connect Wallet'}
-      </WalletMultiButton>
+    <div className="wallet-adapter-button-wrapper">
+      <WalletMultiButton className="wallet-adapter-button" />
     </div>
   );
-}; 
+} 

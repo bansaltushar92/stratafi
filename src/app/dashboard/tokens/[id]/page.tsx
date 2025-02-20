@@ -3,7 +3,6 @@ import { getToken, getTokenPriceHistory, getTokenHolders, getTokenContributions,
 import { getTokenBalance } from '@/lib/solana/token';
 import { TokenDetailsClient } from '@/components/tokens/TokenDetailsClient';
 import { Metadata } from 'next';
-import { auth } from '@clerk/nextjs/server';
 
 interface PageProps {
   params: { id: string };
@@ -26,8 +25,6 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function TokenDetailsPage(props: PageProps) {
   const tokenId = await getTokenId(props.params);
-  const session = await auth();
-  const userId = session?.userId;
 
   try {
     // First fetch the token data
@@ -49,34 +46,9 @@ export default async function TokenDetailsPage(props: PageProps) {
       getTokenContributions(tokenId)
     ]);
 
-    // Initialize wallet data as null
+    // Initialize wallet data and balance as null
     let walletData = null;
     let balance = null;
-
-    // Only attempt to get wallet data if user is authenticated
-    if (userId) {
-      try {
-        // First try to get existing wallet
-        walletData = await getTokenWallet(tokenId, userId);
-      } catch (error) {
-        // If wallet doesn't exist, create a new one
-        if ((error as any)?.message?.includes('no rows returned')) {
-          walletData = await createTokenWallet(tokenId, userId);
-        }
-      }
-
-      // Get token balance if wallet exists
-      if (walletData?.wallet_address) {
-        try {
-          const connection = new Connection(
-            process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-          );
-          balance = await getTokenBalance(connection, new PublicKey(walletData.wallet_address));
-        } catch (error) {
-          console.warn('Error fetching token balance:', error);
-        }
-      }
-    }
 
     return (
       <TokenDetailsClient

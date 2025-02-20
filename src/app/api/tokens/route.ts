@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 
 // Update BASE_API_URL to use the correct Modal function URL format
 const PROJECT_NAME = 'tokenx';
@@ -8,25 +7,6 @@ const getModalUrl = (functionName: string) => `https://${PROJECT_NAME}--${PROJEC
 export async function POST(request: Request) {
   try {
     console.log('Starting token creation process...');
-
-    // Get both the auth and user object
-    const [{ userId }, user] = await Promise.all([auth(), currentUser()]);
-
-    if (!userId || !user) {
-      return NextResponse.json(
-        { message: 'You must be logged in to create a token' },
-        { status: 401 }
-      );
-    }
-
-    // Get the session token from the Authorization header
-    const sessionToken = request.headers.get('authorization')?.split(' ')[1];
-    if (!sessionToken) {
-      return NextResponse.json(
-        { message: 'Missing authorization token' },
-        { status: 401 }
-      );
-    }
 
     const requestBody = await request.json();
     console.log('Received request body:', requestBody);
@@ -64,7 +44,7 @@ export async function POST(request: Request) {
       initial_supply: (target_raise * 1000000).toString(), // Convert to smallest unit (6 decimals for USDC)
       target_raise: target_raise.toString(),
       price_per_token: '1',
-      creator_wallet: userId,
+      creator_wallet: request.headers.get('solana-wallet') || '',
       treasury_wallet: process.env.NEXT_PUBLIC_TREASURY_WALLET || '',
       fundraising_start: now.toISOString(),
       fundraising_end: fundraisingEnd.toISOString(),
@@ -78,12 +58,11 @@ export async function POST(request: Request) {
     const createTokenUrl = `${getModalUrl('create-token')}?${queryParams}`;
     console.log('Modal API URL:', createTokenUrl);
 
-    // Forward request to Modal API with auth token
+    // Forward request to Modal API
     const response = await fetch(createTokenUrl, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${sessionToken}`
+        'Accept': 'application/json'
       }
     });
 
@@ -141,32 +120,16 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { message: 'You must be logged in to view tokens' },
-        { status: 401 }
-      );
-    }
-
-    // Get the session token
-    const sessionToken = request.headers.get('authorization')?.split(' ')[1];
-    if (!sessionToken) {
-      return NextResponse.json(
-        { message: 'Missing authorization token' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const creatorWallet = request.headers.get('solana-wallet');
 
     // Construct the URL for the list_tokens endpoint
     const queryParams = new URLSearchParams({
       ...(status && { status }),
-      creator_wallet: userId,
+      ...(creatorWallet && { creator_wallet: creatorWallet }),
       page: page.toString(),
       limit: limit.toString()
     });
@@ -175,8 +138,7 @@ export async function GET(request: Request) {
 
     const response = await fetch(listTokensUrl, {
       headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${sessionToken}`
+        'Accept': 'application/json'
       }
     });
 
