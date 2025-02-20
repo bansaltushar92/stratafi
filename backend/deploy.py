@@ -92,40 +92,9 @@ def get_supabase():
     return create_client(supabase_url, supabase_key)
 
 async def verify_auth(request: Request) -> str:
-    """Extract user ID from Clerk JWT token without strict verification"""
-    try:
-        # Get the Authorization header
-        auth_header = request.headers.get("Authorization")
-        print(f"DEBUG: Received Authorization header: {auth_header}")
-        
-        if not auth_header or not auth_header.startswith("Bearer "):
-            print("DEBUG: Missing or invalid Authorization header format")
-            raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
-            
-        # Extract the token
-        token = auth_header.split(" ")[1]
-        print(f"DEBUG: Extracted token: {token}")
-        
-        # Decode the token without verification for testing
-        try:
-            decoded = jwt.decode(
-                token,
-                options={
-                    "verify_signature": False,
-                    "verify_aud": False,
-                    "verify_iss": False,
-                    "verify_exp": False
-                }
-            )
-            print(f"DEBUG: Successfully decoded token: {decoded}")
-            return decoded["sub"]
-        except Exception as e:
-            print(f"DEBUG: Error decoding token: {str(e)}")
-            raise
-            
-    except Exception as e:
-        print(f"DEBUG: Authentication error: {str(e)}")
-        raise HTTPException(status_code=401, detail=str(e))
+    """Development placeholder for authentication"""
+    # For development, always return a placeholder user ID
+    return "dev_user_123"
 
 # Token Management Functions
 @app.function(
@@ -136,9 +105,6 @@ async def verify_auth(request: Request) -> str:
 async def create_token(request: Request) -> Dict:
     """Create a new token"""
     try:
-        # Verify authentication
-        user_id = await verify_auth(request)
-        
         # Set environment variables for Solana
         os.environ["SOLANA_PAYER_KEY"] = TEST_PAYER_KEY
         os.environ["SOLANA_NETWORK"] = "devnet"
