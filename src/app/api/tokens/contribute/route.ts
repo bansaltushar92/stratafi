@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const PROJECT_NAME = 'tokenx';
 const getModalUrl = (functionName: string) => `https://${PROJECT_NAME}--${PROJECT_NAME}-app-${functionName}.modal.run`;
 
+// Placeholder auth token for development
+const PLACEHOLDER_AUTH_TOKEN = 'user_2tI1hSgE0CUq7diGU469ghF6hFn';
+
 export async function POST(request: NextRequest) {
   try {
     const { tokenId, amount, walletAddress } = await request.json();
