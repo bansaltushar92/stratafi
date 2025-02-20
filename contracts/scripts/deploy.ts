@@ -4,21 +4,32 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
+  // Get deployment parameters from environment variables
+  const name = process.env.TOKEN_NAME || "Stratafi Token";
+  const symbol = process.env.TOKEN_SYMBOL || "STRAT";
+  const targetRaise = process.env.TARGET_RAISE ? 
+    ethers.parseEther(process.env.TARGET_RAISE) : 
+    ethers.parseEther("100");
+  const pricePerToken = process.env.PRICE_PER_TOKEN ? 
+    ethers.parseEther(process.env.PRICE_PER_TOKEN) : 
+    ethers.parseEther("0.01");
+
   // Deploy the contract
   const StratToken = await ethers.getContractFactory("StratToken");
   const token = await StratToken.deploy(
-    "Stratafi Token",                    // name
-    "STRAT",                            // symbol
-    ethers.parseEther("100"),           // targetRaise (100 ETH)
-    ethers.parseEther("0.01"),          // pricePerToken (0.01 ETH)
-    deployer.address,                    // treasury
-    deployer.address,                    // initialOwner
-    { gasLimit: ethers.getBigInt(5000000) }  // Explicit gas limit for Base
+    name,
+    symbol,
+    targetRaise,
+    pricePerToken,
+    deployer.address,
+    deployer.address,
+    { gasLimit: ethers.getBigInt(5000000) }
   );
 
   await token.waitForDeployment();
   const tokenAddress = await token.getAddress();
 
+  // Output in consistent format for parsing
   console.log("Token deployed to:", tokenAddress);
   console.log("Token details:");
   console.log("  Name:", await token.name());

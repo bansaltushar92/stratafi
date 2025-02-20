@@ -1,8 +1,29 @@
 import { NextResponse } from 'next/server';
+import { ethers } from 'ethers';
+import { execSync } from 'child_process';
+import path from 'path';
 
-// Update BASE_API_URL to use the correct Modal function URL format
+// Load required environment variables
+const requiredEnvVars = {
+  PRIVATE_KEY: process.env.PRIVATE_KEY,
+  TREASURY_WALLET: process.env.NEXT_PUBLIC_TREASURY_WALLET,
+  SEPOLIA_RPC: process.env.SEPOLIA_RPC
+};
+
+// Check for missing environment variables
+const missingEnvVars = Object.entries(requiredEnvVars)
+  .filter(([_, value]) => !value)
+  .map(([key]) => key);
+
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
 const PROJECT_NAME = 'tokenx';
 const getModalUrl = (functionName: string) => `https://${PROJECT_NAME}--${PROJECT_NAME}-app-${functionName}.modal.run`;
+
+// Placeholder auth token for development
+const PLACEHOLDER_AUTH_TOKEN = 'user_2tI1hSgE0CUq7diGU469ghF6hFn';
 
 export async function POST(request: Request) {
   try {
@@ -11,172 +32,93 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
     console.log('Received request body:', requestBody);
 
-    const { name, symbol, description, target_raise } = requestBody;
+    const { name, symbol, description, initial_supply, target_raise, price_per_token } = requestBody;
 
     // Validate required fields
-    if (!name || !symbol || !description || !target_raise) {
-      console.log('Missing required fields:', { name, symbol, description, target_raise });
+    if (!name || !symbol || !description || !initial_supply || !target_raise || !price_per_token) {
+      console.log('Missing required fields:', { name, symbol, description, initial_supply, target_raise, price_per_token });
       return NextResponse.json(
         { message: 'Missing required fields. Please fill in all fields.' },
         { status: 400 }
       );
     }
 
-    // Validate amount
-    if (target_raise < 100) {
-      console.log('Invalid target raise amount:', target_raise);
-      return NextResponse.json(
-        { message: 'Minimum target raise is 100 USDC' },
-        { status: 400 }
-      );
+    // Deploy token using Hardhat
+    console.log('Deploying token contract...');
+    // Use relative path from project root
+    const projectRoot = process.cwd();
+    const contractsDir = path.join(projectRoot, 'contracts');
+    
+    console.log('Contracts directory:', contractsDir);
+    
+    // Set deployment parameters in process.env
+    process.env.TOKEN_NAME = name;
+    process.env.TOKEN_SYMBOL = symbol;
+    process.env.TARGET_RAISE = target_raise.toString();
+    process.env.PRICE_PER_TOKEN = price_per_token.toString();
+    
+    let tokenAddress;
+    try {
+      // First ensure we're in the contracts directory
+      process.chdir(contractsDir);
+      
+      // Run Hardhat deployment script and capture output
+      const output = execSync('npx hardhat run scripts/deploy.ts --network sepolia', {
+        encoding: 'utf8'
+      });
+
+      // Change back to project root
+      process.chdir(projectRoot);
+
+      // Extract contract address from deployment output
+      const addressMatch = output.match(/Token deployed to: (0x[a-fA-F0-9]{40})/);
+      if (!addressMatch) {
+        throw new Error('Could not find contract address in deployment output');
+      }
+      tokenAddress = addressMatch[1];
+      console.log('Token deployed at:', tokenAddress);
+    } catch (err) {
+      console.error('Error deploying contract:', err);
+      // Make sure we change back to project root even if there's an error
+      process.chdir(projectRoot);
+      throw new Error(`Failed to deploy token contract: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
 
-    // Set default fundraising period (30 days from now)
-    const now = new Date();
-    const fundraisingEnd = new Date(now);
-    fundraisingEnd.setDate(now.getDate() + 30);
-
-    // Prepare query parameters for Modal API
-    const queryParams = new URLSearchParams({
-      name,
-      symbol,
-      description: description || '',
-      initial_supply: (target_raise * 1000000).toString(), // Convert to smallest unit (6 decimals for USDC)
-      target_raise: target_raise.toString(),
-      price_per_token: '1',
-      creator_wallet: request.headers.get('solana-wallet') || '',
-      treasury_wallet: process.env.NEXT_PUBLIC_TREASURY_WALLET || '',
-      fundraising_start: now.toISOString(),
-      fundraising_end: fundraisingEnd.toISOString(),
-      features: JSON.stringify({
-        burnable: false,
-        mintable: false
+    // Create token record using Modal API
+    console.log('Creating token record via Modal API...');
+    const modalResponse = await fetch(getModalUrl('create-token'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        symbol,
+        description,
+        initial_supply,
+        target_raise,
+        price_per_token,
+        token_address: tokenAddress,
+        creator_wallet: requiredEnvVars.TREASURY_WALLET,
+        treasury_wallet: requiredEnvVars.TREASURY_WALLET,
+        features: {
+          burnable: false,
+          mintable: false
+        }
       })
     });
 
-    // Construct the URL for the create_token endpoint using the correct Modal format
-    const createTokenUrl = `${getModalUrl('create-token')}?${queryParams}`;
-    console.log('Modal API URL:', createTokenUrl);
-
-    // Forward request to Modal API
-    const response = await fetch(createTokenUrl, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    // Log detailed response information
-    console.log('Modal API Response Status:', response.status);
-    console.log('Modal API Response Headers:', Object.fromEntries(response.headers.entries()));
-    
-    const responseText = await response.text();
-    console.log('Modal API Raw Response:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-      console.log('Parsed response data:', data);
-    } catch (parseError: unknown) {
-      console.error('Failed to parse Modal API response:', parseError);
-      console.error('Response text:', responseText);
-      console.error('Response type:', typeof responseText);
-      console.error('Response length:', responseText.length);
-      console.error('First 100 characters:', responseText.substring(0, 100));
-      return NextResponse.json(
-        { 
-          message: 'Invalid response from server',
-          details: {
-            error: parseError instanceof Error ? parseError.message : 'Unknown parsing error',
-            responsePreview: responseText.substring(0, 100)
-          }
-        },
-        { status: 500 }
-      );
+    if (!modalResponse.ok) {
+      const errorData = await modalResponse.json();
+      throw new Error(`Failed to create token record: ${errorData.message || modalResponse.statusText}`);
     }
 
-    if (!response.ok) {
-      console.error('Modal API error response:', data);
-      return NextResponse.json(
-        { message: data.detail || 'Failed to create token' },
-        { status: response.status }
-      );
-    }
-
-    console.log('Successfully created token:', data);
-    return NextResponse.json(data);
+    const tokenData = await modalResponse.json();
+    return NextResponse.json(tokenData);
   } catch (error) {
-    console.error('Error in POST /api/tokens:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error in token creation:', error);
     return NextResponse.json(
-      { 
-        message: 'An unexpected error occurred. Please try again.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const creatorWallet = request.headers.get('solana-wallet');
-
-    // Construct the URL for the list_tokens endpoint
-    const queryParams = new URLSearchParams({
-      ...(status && { status }),
-      ...(creatorWallet && { creator_wallet: creatorWallet }),
-      page: page.toString(),
-      limit: limit.toString()
-    });
-    const listTokensUrl = `${getModalUrl('list-tokens')}?${queryParams}`;
-    console.log('Sending request to Modal API:', listTokensUrl);
-
-    const response = await fetch(listTokensUrl, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    // Log detailed response information
-    console.log('Modal API Response Status:', response.status);
-    const responseText = await response.text();
-    console.log('Modal API Raw Response:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError: unknown) {
-      console.error('Failed to parse Modal API response:', parseError);
-      console.error('Response text:', responseText);
-      return NextResponse.json(
-        { 
-          message: 'Invalid response from server',
-          details: {
-            error: parseError instanceof Error ? parseError.message : 'Unknown parsing error',
-            responsePreview: responseText.substring(0, 100)
-          }
-        },
-        { status: 500 }
-      );
-    }
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { message: data.message || 'Failed to fetch tokens' },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error in GET /api/tokens:', error);
-    return NextResponse.json(
-      { message: 'An unexpected error occurred. Please try again.' },
+      { message: error instanceof Error ? error.message : 'Failed to create token' },
       { status: 500 }
     );
   }
