@@ -1,0 +1,17 @@
+modal
+fastapi==0.104.1
+pydantic==2.4.2
+python-dotenv==1.0.0
+solders==0.21.0
+solana==0.33.0
+anchorpy>=0.18.0
+pytest-asyncio==0.21.1
+coinbase-advanced-py
+supabase==1.0.3
+pytest==7.4.3
+httpx<0.24.1
+python-jose[cryptography]==3.3.0
+base58==2.1.1
+uvicorn==0.27.1
+PyJWT[crypto]>=2.8.0
+requests>=2.31.0

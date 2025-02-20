@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+bin/
+lib/
+lib64/
+include/
+pyvenv.cfg
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.next/
+out/
+target/
+**/*.rs.bk
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage and test
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Rust/Solana specific
+Cargo.lock
+test-ledger/
+
+# Next.js
+.next/
+.turbo
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Cache
+.cache/
+.parcel-cache/
+
+# clerk configuration (can include secrets)
+/.clerk/
