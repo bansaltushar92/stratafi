@@ -2,36 +2,25 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactNode } from 'react'
-import { OnchainProvider } from '@coinbase/onchainkit'
+import { createConfig, WagmiConfig } from 'wagmi'
+import { baseGoerli } from 'viem/chains'
+import { http } from 'viem'
 
 const queryClient = new QueryClient()
+
+const config = createConfig({
+  chains: [baseGoerli],
+  transports: {
+    [baseGoerli.id]: http('https://goerli.base.org'),
+  }
+})
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <OnchainProvider
-        options={{
-          appName: 'Stratafi',
-          network: {
-            chainId: 84532, // Base Goerli
-            rpcUrl: process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://goerli.base.org',
-          },
-          gas: {
-            sponsorUserOperation: true,
-            batchUserOperations: true,
-          },
-          onramp: {
-            enableCardPayments: true,
-            enableCoinbasePayments: true,
-          },
-          identity: {
-            enableENS: true,
-            enableAvatar: true,
-          }
-        }}
-      >
+      <WagmiConfig config={config}>
         {children}
-      </OnchainProvider>
+      </WagmiConfig>
     </QueryClientProvider>
   )
 } 
