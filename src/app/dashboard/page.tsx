@@ -38,10 +38,10 @@ export default function DashboardPage() {
         <h1 className="text-4xl font-bold text-gray-900">Available Tokens</h1>
         <Link
           href="/dashboard/create"
-          className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-3"
         >
           <span>Create Token</span>
-          <span className="text-white/80">+</span>
+          <span className="text-white/80 text-2xl">+</span>
         </Link>
       </div>
 
