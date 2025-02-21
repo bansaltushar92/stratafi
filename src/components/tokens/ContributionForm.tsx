@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface ContributionFormProps {
   tokenId: string;
   onClose: () => void;
-  walletAddress?: string;
+  walletAddress: string | null | undefined;
 }
 
 export function ContributionForm({ tokenId, onClose, walletAddress }: ContributionFormProps) {

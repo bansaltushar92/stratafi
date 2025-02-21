@@ -46,12 +46,14 @@ export function TokenDetailsClient({
             <h1 className="text-3xl font-bold text-gray-900">{token.name}</h1>
             <p className="text-gray-600">{token.symbol}</p>
           </div>
-          <button
-            onClick={handleContribute}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
-          >
-            Contribute
-          </button>
+          {token.status === 'fundraising' && (
+            <button
+              onClick={handleContribute}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
+            >
+              Contribute
+            </button>
+          )}
         </div>
         <p className="text-gray-700 mb-4">{token.description}</p>
         

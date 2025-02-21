@@ -1,22 +1,18 @@
 import os
 import sys
-
-# Add the project root to the Python path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
 import json
+import base58
 from typing import Dict, List, Optional
 import modal
+from modal import Image, Secret, web_endpoint
 from fastapi import Request, HTTPException
 from dotenv import load_dotenv
-import base58
-from datetime import datetime
 from solders.keypair import Keypair
 from enum import Enum
 import jwt
 from jwt import PyJWKClient
 from jwt.exceptions import InvalidTokenError
-from supabase import create_client, Client
+from supabase import Client, create_client
 import ssl
 import uuid
 from app.integrations.solana import SolanaTokenManager
@@ -317,7 +313,77 @@ def contribute_to_token(
         "amount_raised": new_amount_raised,
         "status": new_status
     }).eq("id", token_id).execute()
-    
+
+    # If funding target is reached, automatically create Uniswap pool and update status
+    if new_status == TokenStatus.COMPLETED.value:
+        try:
+            print(f"Creating Uniswap pool for token {token['token_address']}")
+            # Get environment variables
+            rpc_url = os.environ.get("SEPOLIA_RPC")
+            private_key = os.environ.get("PRIVATE_KEY")
+            
+            if not rpc_url or not private_key:
+                raise ValueError("Missing required environment variables: SEPOLIA_RPC or PRIVATE_KEY")
+
+            # Create Web3 provider
+            w3 = Web3(Web3.HTTPProvider(rpc_url))
+            if not w3.is_connected():
+                raise ValueError("Failed to connect to Sepolia network")
+            
+            account = w3.eth.account.from_key(private_key)
+
+            # Constants for Sepolia network
+            UNISWAP_V3_FACTORY = '0x0227628f3F023bb0B980b67D528571c95c6DaC1c'
+            UNISWAP_V3_ROUTER = '0x3bFA4769FB09EB359f1019CDBC4627C68d45fDB4'
+            USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+            FEE_TIER = 3000
+
+            # Factory ABI
+            FACTORY_ABI = [
+                {
+                    "inputs": [
+                        {"internalType": "address", "name": "tokenA", "type": "address"},
+                        {"internalType": "address", "name": "tokenB", "type": "address"},
+                        {"internalType": "uint24", "name": "fee", "type": "uint24"}
+                    ],
+                    "name": "createPool",
+                    "outputs": [{"internalType": "address", "name": "pool", "type": "address"}],
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                }
+            ]
+
+            # Create pool
+            factory_contract = w3.eth.contract(address=UNISWAP_V3_FACTORY, abi=FACTORY_ABI)
+            create_pool_tx = factory_contract.functions.createPool(
+                token['token_address'],
+                USDC_ADDRESS,
+                FEE_TIER
+            ).build_transaction({
+                'from': account.address,
+                'gas': 5000000,
+                'gasPrice': w3.eth.gas_price,
+                'nonce': w3.eth.get_transaction_count(account.address),
+            })
+
+            signed_tx = w3.eth.account.sign_transaction(create_pool_tx, private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+            if receipt.status == 1:
+                # Update token status to trading
+                supabase.table("tokens").update({
+                    "status": TokenStatus.TRADING.value
+                }).eq("id", token_id).execute()
+                print(f"Uniswap pool created and token status updated to trading. Transaction hash: {tx_hash.hex()}")
+            else:
+                print("Failed to create Uniswap pool")
+
+        except Exception as e:
+            print(f"Error creating Uniswap pool: {str(e)}")
+            # Don't raise the error - we still want to return the contribution result
+            # Just log it and keep the status as COMPLETED
+
     return contribution_result.data[0]
 
 @app.function(
