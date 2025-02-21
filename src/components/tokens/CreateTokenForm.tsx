@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createToken, createTokenWallet } from '@/lib/supabase/client';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '@/components/ClientWalletProvider';
+import { WalletButton } from '@/components/WalletButton';
 
 export function CreateTokenForm() {
   const router = useRouter();
-  const { publicKey, connected } = useWallet();
+  const { address, isConnected } = useWallet();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,15 +42,12 @@ export function CreateTokenForm() {
         }),
       });
 
-      const token = await response.json();
-
-      if (!publicKey) {
-        throw new Error('Wallet not connected');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create token');
       }
 
-
-      await createTokenWallet(token.id, publicKey.toString());
-
+      const token = await response.json();
       router.push('/dashboard');
     } catch (err) {
       console.error('Error creating token:', err);
@@ -66,12 +62,12 @@ export function CreateTokenForm() {
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Token</h1>
       <p className="text-lg text-gray-600 mb-8">Launch your tokenized trading strategy</p>
 
-      {!connected ? (
+      {!isConnected ? (
         <div className="bg-white shadow-card rounded-lg p-8 text-center">
           <p className="text-lg text-gray-600 mb-6">
             Connect your wallet to create a token
           </p>
-          <WalletMultiButton className="wallet-button !text-lg !py-4 !px-8" />
+          <WalletButton />
         </div>
       ) : (
         <form action={handleSubmit} className="bg-white shadow-card rounded-lg p-8 space-y-6">
