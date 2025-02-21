@@ -13,6 +13,11 @@ export function CreateTokenForm() {
 
   async function handleSubmit(formData: FormData) {
     try {
+      if (!address) {
+        setError('Please connect your wallet first');
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -35,6 +40,7 @@ export function CreateTokenForm() {
           initial_supply: parseInt(supply),
           target_raise: parseInt(supply) * parseFloat(price),
           price_per_token: parseFloat(price),
+          creator_id: address,
           features: {
             burnable: false,
             mintable: false
