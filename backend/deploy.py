@@ -21,6 +21,8 @@ import ssl
 import uuid
 from app.integrations.solana import SolanaTokenManager
 from app.integrations.token_sale_manager import TokenSaleManager, TokenSaleConfig
+from web3 import Web3
+import traceback
 
 # Load environment variables
 load_dotenv()
@@ -62,7 +64,10 @@ base_image = (modal.Image.debian_slim()
         "httpx<0.24.1",
         "python-jose[cryptography]==3.3.0",
         "base58==2.1.1",
-        "PyJWT[crypto]>=2.8.0"  # Add JWT support
+        "PyJWT[crypto]>=2.8.0",  # Add JWT support
+        "web3>=6.0.0",  # Add web3 support
+        "eth-abi>=4.0.0",  # Add eth-abi support
+        "eth-typing>=3.0.0"  # Add eth-typing support
     )
 )
 
@@ -209,7 +214,6 @@ async def create_token(request: Request) -> Dict:
         return result.data[0] if result.data else None
         
     except Exception as e:
-        import traceback
         error_msg = f"Error creating token: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         raise ValueError(error_msg)
@@ -335,27 +339,6 @@ def get_token_contributions(
     image=image,
     secrets=[modal.Secret.from_name("tokenx-secrets")]
 )
-@modal.web_endpoint(method="GET")
-async def get_trending_tokens(request: Request) -> List[Dict]:
-    """Get trending tokens based on recent contributions and amount raised"""
-    # Verify authentication
-    user_id = await verify_auth(request)
-    
-    params = dict(request.query_params)
-    limit = int(params.get("limit", 5))
-    
-    supabase = get_supabase()
-    result = supabase.table("tokens")\
-        .select("*")\
-        .order("amount_raised", desc=True)\
-        .limit(limit)\
-        .execute()
-    return result.data
-
-@app.function(
-    image=image,
-    secrets=[modal.Secret.from_name("tokenx-secrets")]
-)
 def update_token_status(token_id: int, status: str) -> Dict:
     """Update token status (admin only)"""
     if status not in TokenStatus.__members__:
@@ -421,48 +404,46 @@ async def create_token_sale(request: Request) -> Dict:
         return result
         
     except Exception as e:
-        import traceback
         error_msg = f"Error creating token sale: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         raise ValueError(error_msg)
 
-@app.function(
-    image=image,
-    secrets=[modal.Secret.from_name("tokenx-secrets")]
-)
-@modal.web_endpoint(method="POST")
-async def setup_raydium_pool(request: Request) -> Dict:
-    """Set up a Raydium liquidity pool for a token"""
-    try:
-        # Verify authentication
-        user_id = await verify_auth(request)
-        
-        # Parse request body
-        params = await request.json()
-        
-        # Extract and validate fields
-        token_address = params.get('token_address')
-        if not token_address:
-            raise ValueError("Missing token_address")
-            
-        # Get creator wallet (using test wallet for development)
-        creator_wallet = get_test_wallet()
-        
-        # Set up Raydium pool
-        async with SolanaTokenManager() as solana:
-            sale_manager = TokenSaleManager(solana)
-            result = await sale_manager.setup_raydium_pool(
-                token_address=token_address,
-                creator_wallet=creator_wallet
-            )
-            
-        return result
-        
-    except Exception as e:
-        import traceback
-        error_msg = f"Error setting up Raydium pool: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        raise ValueError(error_msg)
+# @app.function(
+#     image=image,
+#     secrets=[modal.Secret.from_name("tokenx-secrets")]
+# )
+# @modal.web_endpoint(method="POST")
+# async def setup_raydium_pool(request: Request) -> Dict:
+#     """Set up a Raydium liquidity pool for a token"""
+#     try:
+#         # Verify authentication
+#         user_id = await verify_auth(request)
+#         
+#         # Parse request body
+#         params = await request.json()
+#         
+#         # Extract and validate fields
+#         token_address = params.get('token_address')
+#         if not token_address:
+#             raise ValueError("Missing token_address")
+#             
+#         # Get creator wallet (using test wallet for development)
+#         creator_wallet = get_test_wallet()
+#         
+#         # Set up Raydium pool
+#         async with SolanaTokenManager() as solana:
+#             sale_manager = TokenSaleManager(solana)
+#             result = await sale_manager.setup_raydium_pool(
+#                 token_address=token_address,
+#                 creator_wallet=creator_wallet
+#             )
+#             
+#         return result
+#         
+#     except Exception as e:
+#         error_msg = f"Error setting up Raydium pool: {str(e)}\n{traceback.format_exc()}"
+#         print(error_msg)
+#         raise ValueError(error_msg)
 
 @app.function(
     image=image,
@@ -502,10 +483,353 @@ async def process_token_purchase(request: Request) -> Dict:
         return result
         
     except Exception as e:
-        import traceback
         error_msg = f"Error processing token purchase: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         raise ValueError(error_msg)
+
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name("tokenx-secrets")]
+)
+@modal.web_endpoint(method="POST")
+async def create_uniswap_pool(request: Request) -> Dict:
+    """Create a Uniswap V3 pool for a token"""
+    try:
+        # Get token address from request
+        data = await request.json()
+        token_address = data.get("token_address")
+        if not token_address:
+            raise ValueError("token_address is required")
+
+        # Get environment variables from Modal secrets
+        rpc_url = os.environ.get("SEPOLIA_RPC")
+        private_key = os.environ.get("PRIVATE_KEY")
+        
+        if not rpc_url or not private_key:
+            raise ValueError("Missing required environment variables: SEPOLIA_RPC or PRIVATE_KEY")
+
+        print(f"Connecting to Sepolia RPC: {rpc_url}")
+        # Create Web3 provider
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        if not w3.is_connected():
+            raise ValueError("Failed to connect to Sepolia network")
+        
+        print("Connected to Sepolia network")
+        account = w3.eth.account.from_key(private_key)
+        print(f"Using account: {account.address}")
+
+        # Constants for Sepolia network
+        UNISWAP_V3_FACTORY = '0x0227628f3F023bb0B980b67D528571c95c6DaC1c'  # Sepolia
+        UNISWAP_V3_ROUTER = '0x3bFA4769FB09EB359f1019CDBC4627C68d45fDB4'  # Sepolia
+        USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'  # Sepolia USDC
+        FEE_TIER = 3000
+
+        # ERC20 ABI for approvals and decimals
+        ERC20_ABI = [
+            {
+                "inputs": [
+                    {"name": "spender", "type": "address"},
+                    {"name": "amount", "type": "uint256"}
+                ],
+                "name": "approve",
+                "outputs": [{"name": "", "type": "bool"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"name": "owner", "type": "address"},
+                    {"name": "spender", "type": "address"}
+                ],
+                "name": "allowance",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ]
+
+        # Factory ABI for both getPool and createPool
+        FACTORY_ABI = [
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "tokenA", "type": "address"},
+                    {"internalType": "address", "name": "tokenB", "type": "address"},
+                    {"internalType": "uint24", "name": "fee", "type": "uint24"}
+                ],
+                "name": "getPool",
+                "outputs": [{"internalType": "address", "name": "pool", "type": "address"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "tokenA", "type": "address"},
+                    {"internalType": "address", "name": "tokenB", "type": "address"},
+                    {"internalType": "uint24", "name": "fee", "type": "uint24"}
+                ],
+                "name": "createPool",
+                "outputs": [{"internalType": "address", "name": "pool", "type": "address"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ]
+
+        # Pool ABI for initialization
+        POOL_ABI = [
+            {
+                "inputs": [{"internalType": "uint160", "name": "sqrtPriceX96", "type": "uint160"}],
+                "name": "initialize",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ]
+
+        # Create contract instances
+        token_contract = w3.eth.contract(address=token_address, abi=ERC20_ABI)
+        usdc_contract = w3.eth.contract(address=USDC_ADDRESS, abi=ERC20_ABI)
+        factory_contract = w3.eth.contract(address=UNISWAP_V3_FACTORY, abi=FACTORY_ABI)
+
+        # Check if pool already exists
+        print(f"Checking if pool exists for token {token_address} and USDC {USDC_ADDRESS}")
+        try:
+            existing_pool = factory_contract.functions.getPool(
+                token_address,
+                USDC_ADDRESS,
+                FEE_TIER
+            ).call()
+            print(f"getPool call result: {existing_pool}")
+        except Exception as e:
+            print(f"Error checking existing pool: {str(e)}")
+            raise
+
+        # If pool exists and is not zero address
+        if existing_pool != '0x0000000000000000000000000000000000000000':
+            return {
+                "status": "success",
+                "message": "Pool already exists",
+                "pool_address": existing_pool,
+                "add_liquidity_url": f"https://app.uniswap.org/#/add/{token_address}/{USDC_ADDRESS}/{FEE_TIER}"
+            }
+
+        # Approve tokens for Uniswap Router
+        print("Approving tokens for Uniswap Router...")
+        max_approval = 2**256 - 1
+
+        # Approve token
+        token_allowance = token_contract.functions.allowance(account.address, UNISWAP_V3_ROUTER).call()
+        if token_allowance < max_approval:
+            print("Approving token...")
+            token_approve_tx = token_contract.functions.approve(
+                UNISWAP_V3_ROUTER,
+                max_approval
+            ).build_transaction({
+                'from': account.address,
+                'gas': 100000,
+                'gasPrice': w3.eth.gas_price,
+                'nonce': w3.eth.get_transaction_count(account.address),
+            })
+            signed_tx = w3.eth.account.sign_transaction(token_approve_tx, private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            w3.eth.wait_for_transaction_receipt(tx_hash)
+            print(f"Token approval transaction hash: {tx_hash.hex()}")
+
+        # Approve USDC
+        usdc_allowance = usdc_contract.functions.allowance(account.address, UNISWAP_V3_ROUTER).call()
+        if usdc_allowance < max_approval:
+            print("Approving USDC...")
+            usdc_approve_tx = usdc_contract.functions.approve(
+                UNISWAP_V3_ROUTER,
+                max_approval
+            ).build_transaction({
+                'from': account.address,
+                'gas': 100000,
+                'gasPrice': w3.eth.gas_price,
+                'nonce': w3.eth.get_transaction_count(account.address),
+            })
+            signed_tx = w3.eth.account.sign_transaction(usdc_approve_tx, private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            w3.eth.wait_for_transaction_receipt(tx_hash)
+            print(f"USDC approval transaction hash: {tx_hash.hex()}")
+
+        print("Creating new pool...")
+        # Build transaction for pool creation
+        create_pool_tx = factory_contract.functions.createPool(
+            token_address,
+            USDC_ADDRESS,
+            FEE_TIER
+        ).build_transaction({
+            'from': account.address,
+            'gas': 5000000,
+            'gasPrice': w3.eth.gas_price,
+            'nonce': w3.eth.get_transaction_count(account.address),
+        })
+
+        # Sign and send transaction
+        signed_tx = w3.eth.account.sign_transaction(create_pool_tx, private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        print(f"Pool creation transaction hash: {tx_hash.hex()}")
+        
+        # Wait for transaction receipt
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+        print(f"Pool creation confirmed in block {receipt['blockNumber']}")
+
+        # Get the pool address
+        pool_address = factory_contract.functions.getPool(
+            token_address,
+            USDC_ADDRESS,
+            FEE_TIER
+        ).call()
+
+        # Initialize the pool
+        print("Initializing pool...")
+        pool_contract = w3.eth.contract(address=pool_address, abi=POOL_ABI)
+        
+        # Get token decimals
+        token_decimals = token_contract.functions.decimals().call()
+        
+        # Calculate initial sqrt price for 1:1 price ratio
+        # Adjust for decimal differences between token and USDC (6 decimals)
+        decimal_adjustment = 10 ** (token_decimals - 6)  # USDC has 6 decimals
+        initial_price = 1 * decimal_adjustment  # 1 USDC per token, adjusted for decimals
+        sqrt_price_x96 = int((initial_price ** 0.5) * (2 ** 96))
+
+        init_tx = pool_contract.functions.initialize(sqrt_price_x96).build_transaction({
+            'from': account.address,
+            'gas': 1000000,
+            'gasPrice': w3.eth.gas_price,
+            'nonce': w3.eth.get_transaction_count(account.address),
+        })
+
+        signed_tx = w3.eth.account.sign_transaction(init_tx, private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        print(f"Pool initialization transaction hash: {tx_hash.hex()}")
+        
+        init_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+        print(f"Pool initialization confirmed in block {init_receipt['blockNumber']}")
+
+        return {
+            "status": "success",
+            "message": "Pool created and initialized successfully",
+            "pool_address": pool_address,
+            "add_liquidity_url": f"https://app.uniswap.org/#/add/{token_address}/{USDC_ADDRESS}/{FEE_TIER}",
+            "creation_tx": receipt['transactionHash'].hex(),
+            "initialization_tx": init_receipt['transactionHash'].hex()
+        }
+
+    except Exception as e:
+        print(f"Error creating Uniswap pool: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        raise ValueError(f"Error creating Uniswap pool: {str(e)}")
+
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name("tokenx-secrets")]
+)
+@modal.web_endpoint(method="POST")
+async def check_uniswap_allowances(request: Request) -> Dict:
+    """Check token allowances for Uniswap V3 router"""
+    try:
+        # Get token address from request
+        data = await request.json()
+        token_address = data.get("token_address")
+        if not token_address:
+            raise ValueError("token_address is required")
+
+        # Get environment variables from Modal secrets
+        rpc_url = os.environ.get("SEPOLIA_RPC")
+        private_key = os.environ.get("PRIVATE_KEY")
+        
+        if not rpc_url or not private_key:
+            raise ValueError("Missing required environment variables: SEPOLIA_RPC or PRIVATE_KEY")
+
+        # Create Web3 provider
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        if not w3.is_connected():
+            raise ValueError("Failed to connect to Sepolia network")
+        
+        account = w3.eth.account.from_key(private_key)
+
+        # Constants for Sepolia network
+        UNISWAP_V3_ROUTER = '0x3bFA4769FB09EB359f1019CDBC4627C68d45fDB4'  # Sepolia
+        USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'  # Sepolia USDC
+
+        # ERC20 ABI for allowance and symbol
+        ERC20_ABI = [
+            {
+                "inputs": [
+                    {"name": "owner", "type": "address"},
+                    {"name": "spender", "type": "address"}
+                ],
+                "name": "allowance",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [{"name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ]
+
+        # Create contract instances
+        token_contract = w3.eth.contract(address=token_address, abi=ERC20_ABI)
+        usdc_contract = w3.eth.contract(address=USDC_ADDRESS, abi=ERC20_ABI)
+
+        # Get token details
+        token_symbol = token_contract.functions.symbol().call()
+        token_decimals = token_contract.functions.decimals().call()
+        usdc_decimals = usdc_contract.functions.decimals().call()
+
+        # Check allowances
+        token_allowance = token_contract.functions.allowance(account.address, UNISWAP_V3_ROUTER).call()
+        usdc_allowance = usdc_contract.functions.allowance(account.address, UNISWAP_V3_ROUTER).call()
+
+        # Format allowances with proper decimals
+        formatted_token_allowance = token_allowance / (10 ** token_decimals)
+        formatted_usdc_allowance = usdc_allowance / (10 ** usdc_decimals)
+
+        return {
+            "status": "success",
+            "token": {
+                "symbol": token_symbol,
+                "address": token_address,
+                "allowance": str(token_allowance),  # Return raw value
+                "formatted_allowance": formatted_token_allowance,
+                "decimals": token_decimals
+            },
+            "usdc": {
+                "symbol": "USDC",
+                "address": USDC_ADDRESS,
+                "allowance": str(usdc_allowance),  # Return raw value
+                "formatted_allowance": formatted_usdc_allowance,
+                "decimals": usdc_decimals
+            },
+            "spender": UNISWAP_V3_ROUTER,
+            "owner": account.address
+        }
+
+    except Exception as e:
+        print(f"Error checking allowances: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        raise ValueError(f"Error checking allowances: {str(e)}")
 
 # Example usage
 @app.local_entrypoint()
@@ -555,11 +879,6 @@ def main():
         print("\n6. Getting token contributions...")
         contributions = get_token_contributions.remote(token_id)
         print("✅ Token contributions:", contributions)
-        
-        # Test 7: Get trending tokens
-        print("\n7. Getting trending tokens...")
-        trending = get_trending_tokens.remote()
-        print("✅ Trending tokens:", trending)
         
         print("\n✨ All tests completed successfully!")
         
