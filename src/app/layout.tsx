@@ -1,7 +1,7 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Metadata } from 'next';
-import { Providers } from '@/components/Providers';
+import { Providers } from '@/components/WagmiProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <body>
         <Providers>{children}</Providers>
       </body>

@@ -1,50 +1,54 @@
 'use client'
 
-import { createConfig, WagmiConfig } from 'wagmi'
-import { baseGoerli } from 'viem/chains'
-import { http } from 'viem'
-import { ReactNode } from 'react'
-import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk'
-import { SmartWallet } from '@coinbase/smart-wallet-sdk'
+import { OnchainKitProvider } from '@coinbase/onchainkit'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { type ReactNode, useState } from 'react'
+import { http, cookieStorage, createConfig, createStorage } from 'wagmi'
+import { type State, WagmiProvider } from 'wagmi'
+import { baseSepolia } from 'wagmi/chains'
+import { coinbaseWallet } from 'wagmi/connectors'
 
-export function WagmiProvider({ children }: { children: ReactNode }) {
-  // Initialize Coinbase Wallet SDK
-  const coinbaseWalletSDK = new CoinbaseWalletSDK({
-    appName: 'Stratafi',
-    appLogoUrl: '', // Add your logo URL
-    darkMode: false
-  })
+const config = createConfig({
+  chains: [baseSepolia],
+  connectors: [
+    coinbaseWallet({
+      appName: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || 'StrataFi',
+      preference: process.env.NEXT_PUBLIC_ONCHAINKIT_WALLET_CONFIG as
+        | 'smartWalletOnly'
+        | 'all' || 'all',
+    }),
+  ],
+  storage: createStorage({
+    storage: cookieStorage,
+  }),
+  ssr: true,
+  transports: {
+    [baseSepolia.id]: http(),
+  },
+})
 
-  // Initialize Smart Wallet SDK with Account Abstraction
-  const smartWallet = new SmartWallet({
-    chain: baseGoerli.id,
-    wallet: coinbaseWalletSDK,
-    transport: {
-      rpcUrl: process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://goerli.base.org',
-    },
-    // Smart Account configuration
-    account: {
-      // This enables gasless transactions
-      sponsorUserOperation: true,
-      // This enables batching multiple transactions
-      batchUserOperations: true,
-    }
-  })
+export function Providers(props: {
+  children: ReactNode;
+  initialState?: State;
+}) {
+  const [queryClient] = useState(() => new QueryClient())
 
-  const config = createConfig({
-    chains: [baseGoerli],
-    connectors: [smartWallet.connector],
-    transports: {
-      [baseGoerli.id]: http('https://goerli.base.org'),
-    }
-  })
-
-  console.log('WagmiProvider initialized with:', {
-    chains: [baseGoerli],
-    connectorId: smartWallet.connector.id,
-    hasProvider: !!window.ethereum,
-    availableConnectors: config.connectors
-  })
-
-  return <WagmiConfig config={config}>{children}</WagmiConfig>
+  return (
+    <WagmiProvider config={config} initialState={props.initialState}>
+      <QueryClientProvider client={queryClient}>
+        <OnchainKitProvider
+          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_CDP_KEY}
+          chain={baseSepolia}
+          config={{
+            appearance: {
+              mode: 'auto',
+              theme: 'base',
+            },
+          }}
+        >
+          {props.children}
+        </OnchainKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
 } 

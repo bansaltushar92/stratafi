@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWallet } from '@/components/ClientWalletProvider';
+import { useAccount } from 'wagmi';
 import { WalletButton } from '@/components/WalletButton';
 
 export function CreateTokenForm() {
   const router = useRouter();
-  const { address, isConnected } = useWallet();
+  const { address, isConnected } = useAccount();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
