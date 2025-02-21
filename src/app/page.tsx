@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="bg-white">
-      <div className="absolute inset-x-0 top-0 h-[32rem] bg-gradient-to-b from-indigo-200/85 via-indigo-100/40 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-[32rem] bg-gradient-to-b from-indigo-200/85 via-purple-200/40 to-transparent" />
       <div className="relative isolate px-6 pt-14 lg:px-8">
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
           <div className="text-center">

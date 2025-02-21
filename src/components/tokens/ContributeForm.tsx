@@ -59,7 +59,7 @@ export function ContributeForm({ token, onContribute }: ContributeFormProps) {
       {!wallet.connected ? (
         <div className="text-center">
           <p className="text-gray-600 mb-4">Connect your wallet to contribute</p>
-          <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700" />
+          <WalletMultiButton className="wallet-button !text-lg !py-4 !px-8" />
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,10 +108,12 @@ export function ContributeForm({ token, onContribute }: ContributeFormProps) {
 
           <button
             type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            disabled={loading || !amount}
+            disabled={loading}
+            className={`w-full flex justify-center py-4 px-8 border border-transparent rounded-lg shadow-button text-lg font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            {loading ? 'Processing...' : 'Contribute'}
+            {loading ? 'Contributing...' : 'Contribute'}
           </button>
         </form>
       )}

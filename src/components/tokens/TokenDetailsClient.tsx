@@ -50,7 +50,7 @@ export function TokenDetailsClient({
           </div>
           <button
             onClick={handleContribute}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
           >
             Contribute
           </button>

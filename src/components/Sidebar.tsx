@@ -9,7 +9,9 @@ export function Sidebar() {
 
   return (
     <nav className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold mb-8">Stratafi</h1>
+      <Link href="/" className="block">
+        <h1 className="text-2xl font-bold mb-8 hover:text-purple-600 transition-colors">Stratafi</h1>
+      </Link>
       
       <div className="space-y-4">
         <Link 

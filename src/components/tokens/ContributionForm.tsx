@@ -60,7 +60,7 @@ export function ContributionForm({ tokenId, onClose, walletAddress }: Contributi
           ✕
         </button>
       </div>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="mb-4">
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
             Amount (USDC)
@@ -81,9 +81,11 @@ export function ContributionForm({ tokenId, onClose, walletAddress }: Contributi
           <button
             type="submit"
             disabled={isSubmitting || !amount || !walletAddress}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full flex justify-center py-4 px-8 border border-transparent rounded-lg shadow-button text-lg font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all ${
+              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            {isSubmitting ? 'Processing...' : 'Contribute'}
+            {isSubmitting ? 'Contributing...' : 'Contribute'}
           </button>
         </div>
       </form>
