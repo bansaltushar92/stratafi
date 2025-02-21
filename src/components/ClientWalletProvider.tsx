@@ -1,34 +1,72 @@
 'use client';
 
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
-import { useMemo } from 'react';
+import { ethers } from 'ethers';
+import { useState, useEffect } from 'react';
+import { createContext, useContext } from 'react';
 
-// Import styles in client component
-import '@solana/wallet-adapter-react-ui/styles.css';
+interface WalletContextType {
+  address: string | null;
+  isConnected: boolean;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+}
+
+const WalletContext = createContext<WalletContextType>({
+  address: null,
+  isConnected: false,
+  connect: async () => {},
+  disconnect: () => {},
+});
+
+export function useWallet() {
+  return useContext(WalletContext);
+}
 
 export function ClientWalletProvider({ children }: { children: React.ReactNode }) {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => 
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network),
-    [network]
-  );
+  const [address, setAddress] = useState<string | null>(null);
 
-  const wallets = useMemo(
-    () => [new PhantomWalletAdapter()],
-    []
-  );
+  const connect = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAddress(accounts[0]);
+      } catch (error) {
+        console.error('Error connecting to wallet:', error);
+      }
+    } else {
+      alert('Please install MetaMask or another Ethereum wallet');
+    }
+  };
+
+  const disconnect = () => {
+    setAddress(null);
+  };
+
+  useEffect(() => {
+    // Check if already connected
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.request({ method: 'eth_accounts' })
+        .then((accounts: string[]) => {
+          if (accounts.length > 0) {
+            setAddress(accounts[0]);
+          }
+        });
+
+      // Listen for account changes
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        setAddress(accounts[0] || null);
+      });
+    }
+  }, []);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          {children}
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletContext.Provider value={{
+      address,
+      isConnected: !!address,
+      connect,
+      disconnect,
+    }}>
+      {children}
+    </WalletContext.Provider>
   );
 } 
