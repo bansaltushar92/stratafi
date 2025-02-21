@@ -122,4 +122,39 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+
+    // Call Modal API to get tokens
+    const queryParams = new URLSearchParams({
+      ...(status && { status }),
+      page: page.toString(),
+      limit: limit.toString()
+    });
+
+    const response = await fetch(`${getModalUrl('list-tokens')}?${queryParams}`, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch tokens');
+    }
+
+    const tokens = await response.json();
+    return NextResponse.json(tokens);
+  } catch (error) {
+    console.error('Error fetching tokens:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch tokens' },
+      { status: 500 }
+    );
+  }
 } 
