@@ -32,13 +32,13 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
     console.log('Received request body:', requestBody);
 
-    const { name, symbol, description, initial_supply, target_raise, price_per_token } = requestBody;
+    const { name, symbol, description, initial_supply, target_raise, price_per_token, creator_id } = requestBody;
 
     // Validate required fields
-    if (!name || !symbol || !description || !initial_supply || !target_raise || !price_per_token) {
-      console.log('Missing required fields:', { name, symbol, description, initial_supply, target_raise, price_per_token });
+    if (!name || !symbol || !description || !initial_supply || !target_raise || !price_per_token || !creator_id) {
+      console.log('Missing required fields:', { name, symbol, description, initial_supply, target_raise, price_per_token, creator_id });
       return NextResponse.json(
-        { message: 'Missing required fields. Please fill in all fields.' },
+        { message: 'Missing required fields. Please fill in all fields and connect your wallet.' },
         { status: 400 }
       );
     }
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         target_raise,
         price_per_token,
         token_address: tokenAddress,
-        creator_wallet: requiredEnvVars.TREASURY_WALLET,
+        creator_wallet: creator_id,
         treasury_wallet: requiredEnvVars.TREASURY_WALLET,
         features: {
           burnable: false,
