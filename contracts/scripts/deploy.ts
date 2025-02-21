@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, run } from "hardhat";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -38,6 +38,58 @@ async function main() {
   console.log("  Price per Token:", ethers.formatEther(await token.pricePerToken()), "ETH");
   console.log("  Treasury:", await token.treasury());
   console.log("  Owner:", await token.owner());
+
+  // Wait for 5 block confirmations and add a delay
+  console.log("\nWaiting for block confirmations...");
+  const deploymentReceipt = await token.deploymentTransaction()?.wait(5);
+  
+  // Add a 30-second delay to ensure Etherscan has indexed the contract
+  console.log("Waiting 30 seconds before verification...");
+  await new Promise(resolve => setTimeout(resolve, 30000));
+
+  // Verify the contract
+  console.log("\nVerifying contract...");
+  try {
+    await run("verify:verify", {
+      address: tokenAddress,
+      constructorArguments: [
+        name,
+        symbol,
+        targetRaise,
+        pricePerToken,
+        deployer.address,
+        deployer.address,
+      ],
+    });
+    console.log("Contract verified successfully");
+  } catch (error: any) {
+    if (error?.message?.includes("Already Verified")) {
+      console.log("Contract was already verified");
+    } else {
+      console.error("Error verifying contract:", error);
+      
+      // If first attempt fails, wait longer and try again
+      console.log("\nRetrying verification in 60 seconds...");
+      await new Promise(resolve => setTimeout(resolve, 60000));
+      
+      try {
+        await run("verify:verify", {
+          address: tokenAddress,
+          constructorArguments: [
+            name,
+            symbol,
+            targetRaise,
+            pricePerToken,
+            deployer.address,
+            deployer.address,
+          ],
+        });
+        console.log("Contract verified successfully on second attempt");
+      } catch (retryError) {
+        console.error("Error verifying contract on second attempt:", retryError);
+      }
+    }
+  }
 }
 
 main().catch((error) => {
