@@ -8,8 +8,7 @@ import { TokenPriceChart } from '@/components/tokens/TokenPriceChart';
 import { TokenHolders } from '@/components/tokens/TokenHolders';
 import { ContributionHistory } from '@/components/tokens/ContributionHistory';
 import { VestingInfo } from '@/components/tokens/VestingInfo';
-import { getToken, getTokenContributions } from '@/lib/supabase/client';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '@/components/ClientWalletProvider';
 
 interface TokenDetailsClientProps {
   token: Token;
@@ -28,12 +27,11 @@ export function TokenDetailsClient({
   wallet,
   balance
 }: TokenDetailsClientProps) {
-  const { publicKey } = useWallet();
+  const { address, isConnected } = useWallet();
   const [isContributing, setIsContributing] = useState(false);
 
   const handleContribute = () => {
-    if (!publicKey) {
-      // Show connect wallet message or handle appropriately
+    if (!isConnected) {
       alert('Please connect your wallet first');
       return;
     }
@@ -62,7 +60,7 @@ export function TokenDetailsClient({
             <ContributionForm
               tokenId={token.id}
               onClose={() => setIsContributing(false)}
-              walletAddress={publicKey?.toString()}
+              walletAddress={address}
             />
           </div>
         )}
