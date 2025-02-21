@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CoinbaseConnect } from '@/components/CoinbaseConnect'
 
 export default function HomePage() {
   return (
@@ -14,19 +15,22 @@ export default function HomePage() {
               Stratafi allows you to raise capital for your crypto trading strategies by tokenizing your trading account.
               Investors can participate in your success while maintaining full transparency and security.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
-                href="/dashboard"
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
-              >
-                Get started
-              </Link>
-              <Link 
-                href="/about" 
-                className="text-lg px-6 py-4 font-medium text-gray-900 hover:text-purple-600 transition-smooth flex items-center"
-              >
-                Learn more <span aria-hidden="true" className="ml-2">→</span>
-              </Link>
+            <div className="mt-10 flex flex-col items-center gap-6">
+              <div className="flex items-center justify-center gap-x-6">
+                <Link
+                  href="/dashboard"
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
+                >
+                  Get started
+                </Link>
+                <Link 
+                  href="/about" 
+                  className="text-lg px-6 py-4 font-medium text-gray-900 hover:text-purple-600 transition-smooth flex items-center"
+                >
+                  Learn more <span aria-hidden="true" className="ml-2">→</span>
+                </Link>
+              </div>
+              <CoinbaseConnect />
             </div>
           </div>
         </div>
