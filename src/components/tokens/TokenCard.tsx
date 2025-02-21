@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react'
+import { ContributionForm } from './ContributeForm'
 import Link from 'next/link';
 import { CurrencyDollarIcon, ChartBarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
@@ -18,6 +20,12 @@ interface TokenCardProps {
 }
 
 export function TokenCard({ token }: TokenCardProps) {
+  const [showContributeModal, setShowContributeModal] = useState(false)
+
+  const handleContributeClick = () => {
+    setShowContributeModal(true)
+  }
+
   const progressPercentage = (token.amount_raised / token.target_raise) * 100;
 
   return (
@@ -81,7 +89,28 @@ export function TokenCard({ token }: TokenCardProps) {
             </span>
           </div>
         </div>
+
+        <div className="mt-4">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleContributeClick();
+            }}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Contribute
+          </button>
+        </div>
       </div>
+
+      {showContributeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <ContributionForm 
+            tokenId={token.id} 
+            onClose={() => setShowContributeModal(false)} 
+          />
+        </div>
+      )}
     </Link>
   );
 } 

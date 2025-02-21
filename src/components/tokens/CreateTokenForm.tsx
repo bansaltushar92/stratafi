@@ -65,12 +65,12 @@ export function CreateTokenForm() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Token</h1>
-      <p className="text-lg text-gray-600 mb-8">Launch your tokenized trading strategy</p>
+      <h1 className="text-3xl font-bold text-black mb-2">Create New Token</h1>
+      <p className="text-lg text-black mb-8">Launch your tokenized trading strategy</p>
 
       {!isConnected ? (
         <div className="bg-white shadow-card rounded-lg p-8 text-center">
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-lg text-black mb-6">
             Connect your wallet to create a token
           </p>
           <WalletButton />
@@ -91,7 +91,7 @@ export function CreateTokenForm() {
           )}
 
           <div>
-            <label htmlFor="name" className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="name" className="block text-lg font-medium text-black mb-2">
               Token Name
             </label>
             <input
@@ -99,13 +99,13 @@ export function CreateTokenForm() {
               name="name"
               id="name"
               required
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg text-black"
               placeholder="Enter token name"
             />
           </div>
 
           <div>
-            <label htmlFor="symbol" className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="symbol" className="block text-lg font-medium text-black mb-2">
               Token Symbol
             </label>
             <input
@@ -113,13 +113,13 @@ export function CreateTokenForm() {
               name="symbol"
               id="symbol"
               required
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg text-black"
               placeholder="e.g., BTC"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-lg font-medium text-black mb-2">
               Description
             </label>
             <textarea
@@ -127,13 +127,13 @@ export function CreateTokenForm() {
               id="description"
               rows={3}
               required
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg text-black"
               placeholder="Describe your trading strategy"
             />
           </div>
 
           <div>
-            <label htmlFor="supply" className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="supply" className="block text-lg font-medium text-black mb-2">
               Total Supply
             </label>
             <input
@@ -141,13 +141,13 @@ export function CreateTokenForm() {
               name="supply"
               id="supply"
               required
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg text-black"
               placeholder="Enter total supply"
             />
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="price" className="block text-lg font-medium text-black mb-2">
               Initial Price (in USDC)
             </label>
             <input
@@ -158,9 +158,9 @@ export function CreateTokenForm() {
               defaultValue="1"
               min="0.000001"
               required
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg"
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-lg text-black"
             />
-            <p className="mt-2 text-base text-gray-500">Default price is 1 USDC per token</p>
+            <p className="mt-2 text-base text-black">Default price is 1 USDC per token</p>
           </div>
 
           <div className="pt-4">
