@@ -8,7 +8,7 @@ import { TokenPriceChart } from '@/components/tokens/TokenPriceChart';
 import { TokenHolders } from '@/components/tokens/TokenHolders';
 import { ContributionHistory } from '@/components/tokens/ContributionHistory';
 import { VestingInfo } from '@/components/tokens/VestingInfo';
-import { useWallet } from '@/components/ClientWalletProvider';
+import { useAccount } from 'wagmi';
 
 interface TokenDetailsClientProps {
   token: Token;
@@ -27,14 +27,10 @@ export function TokenDetailsClient({
   wallet,
   balance
 }: TokenDetailsClientProps) {
-  const { address, isConnected } = useWallet();
+  const { address, isConnected } = useAccount();
   const [isContributing, setIsContributing] = useState(false);
 
   const handleContribute = () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
     setIsContributing(true);
   };
 
@@ -43,26 +39,23 @@ export function TokenDetailsClient({
       <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{token.name}</h1>
-            <p className="text-gray-600">{token.symbol}</p>
+            <h1 className="text-3xl font-bold text-black">{token.name}</h1>
+            <p className="text-black">{token.symbol}</p>
           </div>
-          {token.status === 'fundraising' && (
-            <button
-              onClick={handleContribute}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
-            >
-              Contribute
-            </button>
-          )}
+          <button
+            onClick={handleContribute}
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg px-8 py-4 rounded-lg font-medium shadow-button hover:shadow-lg transition-smooth"
+          >
+            Contribute
+          </button>
         </div>
-        <p className="text-gray-700 mb-4">{token.description}</p>
+        <p className="text-black mb-4">{token.description}</p>
         
         {isContributing && (
           <div className="mb-6">
             <ContributionForm
               tokenId={token.id}
               onClose={() => setIsContributing(false)}
-              walletAddress={address}
             />
           </div>
         )}
