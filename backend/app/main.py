@@ -226,19 +226,6 @@ async def get_token_contributions(
     result = supabase.table("contributions").select("*").eq("token_id", token_id).range(start, start + limit - 1).execute()
     return [ContributionResponse(**contribution) for contribution in result.data]
 
-@app.get("/api/tokens/trending")
-async def get_trending_tokens(
-    supabase: Client = Depends(get_supabase),
-    limit: int = Query(5, gt=0, le=20)
-):
-    """Get trending tokens based on recent contributions and amount raised"""
-    result = supabase.table("tokens")\
-        .select("*")\
-        .order("amount_raised", desc=True)\
-        .limit(limit)\
-        .execute()
-    return [TokenResponse(**token) for token in result.data]
-
 @app.patch("/api/tokens/{token_id}/status")
 async def update_token_status(
     token_id: int,

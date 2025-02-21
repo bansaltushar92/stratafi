@@ -7,7 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "approve-tokens": "npx hardhat run scripts/approve-tokens.ts --network sepolia",
+    "check-allowances": "npx hardhat run scripts/check-allowances.ts --network sepolia"
   },
   "keywords": [],
   "author": "",
