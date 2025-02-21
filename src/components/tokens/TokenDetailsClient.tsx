@@ -6,8 +6,6 @@ import { ContributionForm } from '@/components/tokens/ContributionForm';
 import { TokenStats } from '@/components/tokens/TokenStats';
 import { TokenPriceChart } from '@/components/tokens/TokenPriceChart';
 import { TokenHolders } from '@/components/tokens/TokenHolders';
-import { ContributionHistory } from '@/components/tokens/ContributionHistory';
-import { VestingInfo } from '@/components/tokens/VestingInfo';
 import { useWallet } from '@/components/ClientWalletProvider';
 
 interface TokenDetailsClientProps {
@@ -73,22 +71,15 @@ export function TokenDetailsClient({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Price History</h2>
-          <TokenPriceChart data={priceHistory} />
+          <div className="aspect-square">
+            <TokenPriceChart data={priceHistory} />
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Token Holders</h2>
-          <TokenHolders holders={holders} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Contribution History</h2>
-          <ContributionHistory contributions={contributions} />
-        </div>
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Vesting Schedule</h2>
-          <VestingInfo token={token} />
+          <div className="aspect-square">
+            <TokenHolders holders={holders} />
+          </div>
         </div>
       </div>
     </div>

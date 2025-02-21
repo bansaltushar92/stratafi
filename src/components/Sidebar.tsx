@@ -10,7 +10,7 @@ export function Sidebar() {
   return (
     <nav className="p-6 space-y-6">
       <Link href="/" className="block">
-        <h1 className="text-2xl font-bold mb-8 hover:text-purple-600 transition-colors">Stratafi</h1>
+        <h1 className="text-10xl font-bold mb-10 hover:text-purple-600 transition-colors">Stratafi</h1>
       </Link>
       
       <div className="space-y-4">
@@ -18,9 +18,10 @@ export function Sidebar() {
           href="/dashboard" 
           className={`flex items-center text-xl p-3 rounded-lg transition-colors ${
             pathname === '/dashboard' ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:bg-gray-50'
+            
           }`}
         >
-          <MagnifyingGlassIcon className="w-7 h-7 mr-3" />
+          <MagnifyingGlassIcon className="w-8 h-8 mr-4" />
           Explore Tokens
         </Link>
 
@@ -30,7 +31,7 @@ export function Sidebar() {
             pathname === '/dashboard/my-tokens' ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:bg-gray-50'
           }`}
         >
-          <SparklesIcon className="w-7 h-7 mr-3" />
+          <SparklesIcon className="w-8 h-8 mr-4" />
           My Tokens
         </Link>
 
@@ -40,7 +41,7 @@ export function Sidebar() {
             pathname === '/dashboard/investments' ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:bg-gray-50'
           }`}
         >
-          <ChartBarIcon className="w-7 h-7 mr-3" />
+          <ChartBarIcon className="w-8 h-8 mr-4" />
           My Investments
         </Link>
       </div>
